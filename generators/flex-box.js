@@ -40,7 +40,7 @@ function build(p){
     }
   }
   const front=C.segs.filter(s=>s.line)[2];
-  const plate=label=>({label,outline:J.roundedRect(0,0,p.x,p.y,p.r),holes:slots,engrave:label==='TOP'?[[p.em,p.em,p.x-p.em,p.y-p.em]]:[]});
+  const plate=label=>({label,outline:J.roundedRect(0,0,p.x,p.y,p.r),holes:slots.map(s=>J.widen(s,p.play)),engrave:label==='TOP'?[[p.em,p.em,p.x-p.em,p.y-p.em]]:[]});
   const parts=[
     {label:'WALL STRIP',outline:J.bumpRect(0,0,C.L,h,{b:tabs.map(([a,b])=>[a,b,t]),t:tabs.map(([a,b])=>[a,b,t])}),cuts,
      engrave:front?[[front.s0+p.em,p.em,front.s1-p.em,h-p.em]]:[]},
@@ -54,6 +54,7 @@ LB.register({
   name:'Flex box',
   group:'Boxes',
   blurb:'Rounded-corner box: one wall strip with living-hinge corners between two plates.',
+  experimental:'Experimental: the hinge pattern hasn\'t been test-cut yet. Try one corner on scrap first.',
   params:[
     {id:'x',label:'Outside width (x)',def:100,step:1,group:'Box',pos:true},
     {id:'y',label:'Outside depth (y)',def:70,step:1,group:'Box',pos:true},
@@ -61,6 +62,7 @@ LB.register({
     {id:'r',label:'Corner radius',def:20,step:1,group:'Box',pos:true},
     {id:'t',label:'Material thickness',def:3,step:0.1,group:'Material',pos:true},
     {id:'fw',label:'Tab width (× thickness)',def:2,step:0.5,group:'Material',min:1},
+    J.playParam(),
     ...J.hingeParams(),
     {id:'em',label:'Engrave inset margin',def:10,step:1,group:'Engrave',min:0},
   ],

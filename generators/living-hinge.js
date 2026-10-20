@@ -8,6 +8,7 @@ LB.register({
   name:'Living hinge panel',
   group:'Basics',
   blurb:'Flat panel with a band of slits that lets it bend.',
+  experimental:'Experimental: the hinge pattern hasn\'t been test-cut yet. Try it on scrap first.',
   params:[
     {id:'W',label:'Width',def:150,step:1,group:'Panel',pos:true},
     {id:'H',label:'Height',def:80,step:1,group:'Panel',pos:true},

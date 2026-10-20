@@ -11,7 +11,7 @@ Offline, boxes.py-style collection of parametric laser-cut SVG generators. Built
 - `offset` uses mitred corners and assumes simple polygons without features thinner than the kerf; `clean` the outline first so there are no collinear points.
 
 ## Testing
-- Preview with the `laserboxes` entry in `C:\Claude\.claude\launch.json` (http://localhost:8797).
+- Preview by serving this folder (e.g. `python -m http.server 8797`), or the `laserboxes` launch entry if your workspace has one.
 - Check the browser console for errors, every generator's thumbnail on the index page, and the fit check at defaults.
 
 ## Joint engine (`core/joints.js`)
@@ -20,8 +20,21 @@ Offline, boxes.py-style collection of parametric laser-cut SVG generators. Built
 - Holes that are meant to be empty (e.g. the drawer's finger hole) need `free: true` or the coverage check counts them as gaps.
 - `view3d` only draws axis-aligned flat parts; the flex box has no assembled view for that reason.
 
+- Joint clearance (`play`) narrows kept fingers and widens slots. Coverage can't check clearance geometry (it's gaps by design), so box generators wrap `build` in `withCheckParts` and check `g.checkParts` (zero clearance).
+- Partly joined edges (shorter front/back walls) use span lists in `fingerPanel`; `boxParts` exposes them as `h: {front, back}` and `omit: ['back']`.
+
+## Core features to keep working
+- Layout: rows, 90° rotation only when it's the only way a part fits, extra sheets past the sheet height. `annotate` is skipped when anything is rotated (its X/Y map one axis each).
+- Dog-bones are applied after kerf, in layout; DXF is R12 POLYLINE/CIRCLE in mm; Print 1:1 opens a pop-up window.
+
+## Public repo
+- This folder is its own **public** git repo (MIT). Never add personal data, keys, or files from the private `C:\Claude` repo. The issue/source link is set in `index.html` (`LB.start({repo})`).
+
 ## Generators
-- Boxes: `closed-box`, `open-box`, `lid-box`, `divider-tray`, `drawer`, `flex-box`.
+- Boxes: `closed-box`, `open-box`, `lid-box`, `sliding-lid-box`, `hinged-lid-box`, `divider-tray`, `drawer`, `flex-box`.
+- `hinged-lid-box`: pivot r = t + pin/2 + 1.5 in from the back and down from the top; side corners rounded about the pivot and the back wall lowered to the pivot height, so the lid opens ~90° and rests on the back wall (swing simulated in the fit check). Leaves an r-tall gap at the back when closed.
+- `sliding-lid-box`: lid runs between glued-in low and top rails; front wall stops at the lid underside.
+- `flex-box` and `living-hinge` are marked experimental until test-cut.
 - `hook-joint`: gravity hook joint cover for a resin printer lid. Design decisions: the front panel is set back by (front wall + clearance) so the slots can be closed; seated, the front panel hangs (tooth height + clearance) below the top panel to give the tooth lift room.
 - `plate`: minimal template. `living-hinge`: hinge panel.
-- Not built yet (boxes.py has them): sliding-lid box, hinged-lid box, polygon/round boxes, shelves, gears.
+- Not built yet (boxes.py has them): polygon/round boxes, shelves, gears.

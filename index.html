@@ -3,13 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LaserBoxes</title>
+<title>LaserBoxes: free laser-cut box generators</title>
+<meta name="description" content="Free, offline parametric generators for laser-cut boxes, trays, drawers and joints. Set your sizes, check the 3D view and fit check, download SVG or DXF.">
+<meta property="og:title" content="LaserBoxes">
+<meta property="og:description" content="Free parametric laser-cut box generators: finger-jointed boxes, lids, divider trays, drawers, living hinges. SVG and DXF export.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#d40000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23d40000'/%3E%3Cpath d='M7 11h4v-3h4v3h2v-3h4v3h4v13H7z' fill='none' stroke='%23fff' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="core/lb.css">
 </head>
 <body>
 <header>
   <a class="brand" href="#">LaserBoxes</a>
-  <span class="info">Offline parametric laser-cut generators, in the spirit of boxes.py</span>
+  <span class="info">Free parametric laser-cut generators, in the spirit of boxes.py. Works offline.</span>
 </header>
 <div id="app"></div>
 <script src="core/lb.js"></script>
@@ -18,12 +24,15 @@
 <script src="generators/closed-box.js"></script>
 <script src="generators/open-box.js"></script>
 <script src="generators/lid-box.js"></script>
+<script src="generators/sliding-lid-box.js"></script>
+<script src="generators/hinged-lid-box.js"></script>
 <script src="generators/divider-tray.js"></script>
 <script src="generators/drawer.js"></script>
 <script src="generators/flex-box.js"></script>
 <script src="generators/hook-joint.js"></script>
 <script src="generators/plate.js"></script>
 <script src="generators/living-hinge.js"></script>
-<script>LB.start();</script>
+<!-- repo: link for "Source" and "Report a problem"; change it if the GitHub repo name differs -->
+<script>LB.start({repo:'https://github.com/jsprange-purdue/LaserBoxes'});</script>
 </body>
 </html>
