@@ -1,0 +1,60 @@
+:root{--bg:#f5f5f2;--card:#fff;--ink:#1d1d1f;--mute:#6b6b6b;--line:#dcdcd8;--cut:#d40000;--eng:#0057d9;--part:#efe6d4;--part2:#d9e4f2;--warn:#a65f00;--err:#c40000;--ok:#1a7f37;--acc:#333}
+@media (prefers-color-scheme:dark){:root{--bg:#151515;--card:#1f1f1f;--ink:#ececec;--mute:#9a9a9a;--line:#343434;--cut:#ff5c5c;--eng:#5fa8ff;--part:#3a342a;--part2:#2a3442;--warn:#f0a43a;--err:#ff6b6b;--ok:#4cc36a;--acc:#ddd}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:12px 20px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+.brand{font-size:18px;font-weight:700;color:var(--ink);text-decoration:none}
+a{color:var(--eng)}
+
+/* index */
+.index{padding:8px 20px 24px}
+h2.cat{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);margin:18px 0 8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.gcard{display:flex;flex-direction:column;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--ink);text-decoration:none}
+.gcard:hover{border-color:var(--cut)}
+.gcard span{color:var(--mute);font-size:13px}
+.thumb{height:130px;display:flex;align-items:center;justify-content:center;margin-bottom:6px}
+.thumb svg{max-height:130px;width:100%}
+
+/* generator page */
+.wrap{display:grid;grid-template-columns:310px 1fr;gap:16px;padding:16px 20px}
+@media (max-width:860px){.wrap{grid-template-columns:1fr;padding:12px 16px}.index{padding:8px 16px 24px}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:14px}
+.card h1{font-size:17px;margin:6px 0 2px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);margin:0 0 8px}
+.back{font-size:13px;text-decoration:none}
+fieldset{border:0;padding:0;margin:10px 0 0}
+legend{font-weight:600;font-size:12px;color:var(--mute);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+label.row{display:grid;grid-template-columns:1fr 84px;align-items:center;gap:8px;margin:3px 0}
+label.row.chk{grid-template-columns:1fr auto}
+input[type=number]{width:100%;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink);font:inherit;text-align:right}
+button{font:inherit;padding:8px 12px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.primary{background:var(--cut);border-color:var(--cut);color:#fff;font-weight:600}
+button:disabled{opacity:.45;cursor:not-allowed}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+ul.msgs{margin:0;padding-left:18px}
+ul.msgs li{margin:2px 0}
+.err{color:var(--err)}.warn{color:var(--warn)}.ok{color:var(--ok)}.info{color:var(--mute)}
+svg{display:block;width:100%;height:auto}
+.prev svg{max-height:70vh}
+
+/* drawing classes (usable by generators) */
+.cutp{fill:var(--part);stroke:var(--cut);stroke-width:1;vector-effect:non-scaling-stroke}
+.cutf{fill:var(--part2);stroke:var(--cut);stroke-width:1;vector-effect:non-scaling-stroke}
+.cutl{fill:none;stroke:var(--cut);stroke-width:1;vector-effect:non-scaling-stroke}
+.engp{fill:none;stroke:var(--eng);stroke-width:1;stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
+.dim line,.dim path{stroke:var(--mute);stroke-width:.8;vector-effect:non-scaling-stroke;fill:none}
+.dim text,.lbl{fill:var(--mute);font-family:system-ui,sans-serif}
+.lbl{font-weight:600}
+.solid{fill:var(--part);stroke:var(--acc);stroke-width:1;vector-effect:non-scaling-stroke}
+.solidf{fill:var(--part2);stroke:var(--acc);stroke-width:1;vector-effect:non-scaling-stroke}
+.frame{fill:none;stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke}
+.lid{fill:none;stroke:var(--mute);stroke-dasharray:4 3;stroke-width:1;vector-effect:non-scaling-stroke}
+.arrow{stroke:var(--cut);stroke-width:2;vector-effect:non-scaling-stroke;fill:none}
+.ah{fill:var(--cut)}
+
+table.chk{border-collapse:collapse;width:100%}
+table.chk td{padding:3px 6px;border-top:1px solid var(--line);vertical-align:top}
+table.chk td:first-child{width:24px;font-weight:700}
+details summary{cursor:pointer;font-weight:600}
+code{background:var(--bg);padding:0 3px;border-radius:3px}

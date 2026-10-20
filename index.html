@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LaserBoxes</title>
+<link rel="stylesheet" href="core/lb.css">
+</head>
+<body>
+<header>
+  <a class="brand" href="#">LaserBoxes</a>
+  <span class="info">Offline parametric laser-cut generators, in the spirit of boxes.py</span>
+</header>
+<div id="app"></div>
+<script src="core/lb.js"></script>
+<script src="core/joints.js"></script>
+<!-- Generators: add one <script> line per file in generators/ (listed in this order) -->
+<script src="generators/closed-box.js"></script>
+<script src="generators/open-box.js"></script>
+<script src="generators/lid-box.js"></script>
+<script src="generators/divider-tray.js"></script>
+<script src="generators/drawer.js"></script>
+<script src="generators/flex-box.js"></script>
+<script src="generators/hook-joint.js"></script>
+<script src="generators/plate.js"></script>
+<script src="generators/living-hinge.js"></script>
+<script>LB.start();</script>
+</body>
+</html>
