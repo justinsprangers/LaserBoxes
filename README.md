@@ -40,9 +40,15 @@ Buttons: **Print 1:1** prints every part at real size (one per page, with a 50 m
 | Box with lid | `generators/lid-box.js` | Open box plus a lift-off lid that slips over it. |
 | Sliding-lid box | `generators/sliding-lid-box.js` | Lid slides in from the front along grooves formed by glued-in rails. |
 | Hinged-lid box | `generators/hinged-lid-box.js` | Lid pivots on two pins through the side walls; the fit check simulates the swing (opens about 90°). |
+| Hinge box | `generators/hinge-box.js` | Lid on knuckle hinges: alternating box/lid leaves on the back with a rod through them (like boxes.py's HingeBox); opens 180°. |
+| Integrated-hinge box | `generators/integrated-hinge-box.js` | No extra hinge parts: the lid's back panel has axle tabs that turn in round knobs on the box sides (like boxes.py's IntegratedHingeBox). |
 | Divider tray | `generators/divider-tray.js` | Open tray split into a grid of equal compartments; dividers cross-halve and tab into the walls and bottom. |
+| Polygon box | `generators/polygon-box.js` | Regular 3–12 sided box: walls tab into a polygon bottom and optional top. |
 | Drawer | `generators/drawer.js` | Open box with an overhanging face plate and finger-pull hole. |
+| Stackable bin | `generators/stackable-bin.js` | Open-front parts bin with sloped sides and a label lip; cleats underneath lock bins into a stack. |
+| Shelf / cubby organizer | `generators/shelf.js` | Open-front grid of cubbies or a small bookshelf, with optional wall-mount holes. |
 | Flex box *(experimental)* | `generators/flex-box.js` | Rounded-corner box: one wall strip with living-hinge corners, tabbed into top and bottom plates. |
+| Spur gears | `generators/gears.js` | Involute spur gear, or a meshing pair at the right centre distance; the fit check turns them through a tooth pitch. |
 | Gravity hook joint cover | `generators/hook-joint.js` | L-shaped top + front cover for a resin printer lid. Front panel fingers lift through slots, slide sideways and drop so a tooth locks them. |
 | Plate with mounting holes | `generators/plate.js` | Simple plate with corner holes. Also the template for new generators. |
 | Living hinge panel *(experimental)* | `generators/living-hinge.js` | Flat panel with a band of slits so it bends. |
@@ -73,7 +79,7 @@ What a generator provides (`LB.register({...})`):
 | `checks(p, g)` | no | Fit check: returns `[{ok, name, detail}]`. |
 | `filename(p)`, `help` | no | Download name and extra help (HTML) for the page. |
 
-Shared helpers on `LB`: `rect`, `clean`, `offset`, `bbox`, `area`, `pathOf`, `dogbone`, `dimH`, `dimV`, `fmt`, `f3`, `esc`. Joint helpers on `LB.joints`: `fingerPanel` (finger-jointed panel, including partly joined edges), `boxParts` / `boxParams` / `boxDims` / `boxValidate` / `boxChecks` / `withCheckParts` (a whole box, used by every box generator), `bumpRect` (tabs and notches), `roundedRect`, `roundCorner`, `widen`, `hingeCuts` / `hingeParams`, `view3d`, `coverage`. A new box-style generator is usually `boxParts` plus extra holes and parts; see `drawer.js` (smallest), `sliding-lid-box.js` or `divider-tray.js`. Shared CSS classes for drawings are in `core/lb.css` (`cutp`, `cutf`, `solid`, `solidf`, `frame`, `arrow`, `lbl`, `dim`, ...).
+Shared helpers on `LB`: `rect`, `clean`, `offset`, `bbox`, `area`, `pathOf`, `dogbone`, `dimH`, `dimV`, `fmt`, `f3`, `esc`. Joint helpers on `LB.joints`: `fingerPanel` (finger-jointed panel, including partly joined edges), `boxParts` / `boxParams` / `boxDims` / `boxValidate` / `boxChecks` / `withCheckParts` (a whole box, used by every box generator), `bumpRect` (tabs and notches), `roundedRect`, `roundCorner` (round a corner, cut a clearance arc, or add a knob), `clipHalf`, `widen`, `gridBox` (divider grid), `hingeCuts` / `hingeParams`, `view3d` / `drawFaces`, `coverage`, `swing3d` (rotate a lid about an axis and find how far it opens). A new box-style generator is usually `boxParts` plus extra holes and parts; see `drawer.js` (smallest), `sliding-lid-box.js` or `divider-tray.js`. Shared CSS classes for drawings are in `core/lb.css` (`cutp`, `cutf`, `solid`, `solidf`, `frame`, `arrow`, `lbl`, `dim`, ...).
 
 ## Files
 

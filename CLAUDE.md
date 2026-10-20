@@ -18,8 +18,8 @@ Offline, boxes.py-style collection of parametric laser-cut SVG generators. Built
 - Box convention: outer size X × Y × Z, panels drawn at outer size in box coordinates (x right, y front→back, z up). The t × t corner cubes belong to the front and back; every other edge splits an odd number of equal fingers ('F' keeps the 1st, 3rd, ...; its mate 'f' keeps the rest).
 - Parts that assemble carry `place` (3D slab + body `env` + group `g`). `coverage` samples each part's thickness and requires every point inside a body to be filled by exactly one part. It must pass at defaults for every box generator; it has been shown to catch wrong finger polarity, a corner claimed twice, a mis-sized panel and a missing divider slot.
 - Holes that are meant to be empty (e.g. the drawer's finger hole) need `free: true` or the coverage check counts them as gaps.
-- `view3d` only draws axis-aligned flat parts; the flex box has no assembled view for that reason.
-
+- `view3d` only draws axis-aligned flat parts (after `tf`); the flex box has no assembled view for that reason. Non-axis-aligned generators (polygon box) build faces themselves and call `drawFaces`.
+- `swing3d` rotates moving parts about an x-parallel axis and samples grid points, outline points and both faces of each part; it has been shown to catch a too-small axle bore, a missing knob cut-out and a misplaced pivot. Hinge generators must pass it at defaults.
 - Joint clearance (`play`) narrows kept fingers and widens slots. Coverage can't check clearance geometry (it's gaps by design), so box generators wrap `build` in `withCheckParts` and check `g.checkParts` (zero clearance).
 - Partly joined edges (shorter front/back walls) use span lists in `fingerPanel`; `boxParts` exposes them as `h: {front, back}` and `omit: ['back']`.
 
@@ -31,10 +31,16 @@ Offline, boxes.py-style collection of parametric laser-cut SVG generators. Built
 - This folder is its own **public** git repo (MIT). Never add personal data, keys, or files from the private `C:\Claude` repo. The issue/source link is set in `index.html` (`LB.start({repo})`).
 
 ## Generators
-- Boxes: `closed-box`, `open-box`, `lid-box`, `sliding-lid-box`, `hinged-lid-box`, `divider-tray`, `drawer`, `flex-box`.
+- Boxes: `closed-box`, `open-box`, `lid-box`, `sliding-lid-box`, `hinged-lid-box`, `hinge-box`, `integrated-hinge-box`, `divider-tray`, `polygon-box`, `drawer`, `flex-box`. Storage: `stackable-bin`, `shelf`. Mechanisms: `gears`.
+- `hinge-box`: knuckle leaves (box/lid alternating, `hp` gap) tabbed through slots in the box back and lid back; rod axis at (Y + eye radius, rim). The lid is an upside-down open box mapped with `tf`. Opens 180°.
+- `integrated-hinge-box` (boxes.py ChestHinge idea, own geometry): box side knobs of radius R around the pivot at (back wall centre, rim) with bore rb = half-diagonal of a t × t axle tab + clearance; lid back panel carries the tabs and is cut back at its ends below Z + R + clearance; lid sides are cut on radius R + clearance; box back wall is R + 1 lower. Built in box coordinates in one coverage group. Assembly order matters (lid back tabs into side bores first).
+- `stackable-bin`: open box with `h.front` lip, sides clipped by a slope line; glued cleats under the bottom sit inside the walls of the bin below.
+- `shelf`: `gridBox` stood on its back via `tf`, with parts relabelled.
+- `polygon-box`: no corner joints (square-cut walls leave a V gap of 2t·tan(π/n) outside); no coverage check, only slot/tab checks.
+- `gears`: involute, addendum m, dedendum 1.25 m, no undercut correction; fit check turns the pair through one pitch and checks overlap and contact ratio.
 - `hinged-lid-box`: pivot r = t + pin/2 + 1.5 in from the back and down from the top; side corners rounded about the pivot and the back wall lowered to the pivot height, so the lid opens ~90° and rests on the back wall (swing simulated in the fit check). Leaves an r-tall gap at the back when closed.
 - `sliding-lid-box`: lid runs between glued-in low and top rails; front wall stops at the lid underside.
 - `flex-box` and `living-hinge` are marked experimental until test-cut.
 - `hook-joint`: gravity hook joint cover for a resin printer lid. Design decisions: the front panel is set back by (front wall + clearance) so the slots can be closed; seated, the front panel hangs (tooth height + clearance) below the top panel to give the tooth lift room.
 - `plate`: minimal template. `living-hinge`: hinge panel.
-- Not built yet (boxes.py has them): polygon/round boxes, shelves, gears.
+- Not built yet: round (cylindrical) boxes, sliding drawer cabinets, gear racks / internal gears.

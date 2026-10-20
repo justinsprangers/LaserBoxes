@@ -297,8 +297,11 @@ ${gen.experimental?`<p class="warn">${esc(gen.experimental)}</p>`:''}
 ${panels}
 ${gen.checks?'<div class="card"><h2>Fit check (simulated at current values)</h2><div id="fit"></div></div>':''}
 <div class="card"><details open><summary>How to use</summary>${gen.help||''}${COMMON_HELP}</details></div></main></div>`+footer();
-  $('form').addEventListener('input',update);
-  $('form').addEventListener('change',update);
+  // Recalculate once typing pauses: some fit checks take a moment.
+  let timer=null;
+  const later=()=>{clearTimeout(timer);timer=setTimeout(update,150);};
+  $('form').addEventListener('input',later);
+  $('form').addEventListener('change',later);
   $('dl').addEventListener('click',()=>download('svg'));
   $('dxf').addEventListener('click',()=>download('dxf'));
   $('print').addEventListener('click',printParts);

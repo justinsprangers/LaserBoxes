@@ -23,9 +23,10 @@ function fingerSegs(L,t,fw){
 // W x H panel at outer size. edges = [bottom, right, top, left] (sides run counter-clockwise):
 //   'F' keeps the 1st, 3rd, ... fingers, 'f' keeps the others (its mate is 'F'),
 //   'e' is a plain edge, 'n' is cut back by t along its whole middle.
-//   An edge can also be a list of spans [{len, type, c0, c1}] in the side's direction, for an
-//   edge that's only partly joined. Where a joined span meets another span, a t-long end zone
-//   is kept (c0 / c1 true) or cut back (false).
+//   An edge can also be a list of spans [{len, type, c0, c1, swap}] in the side's direction, for
+//   an edge that's only partly joined. Where a joined span meets another span, a t-long end zone
+//   is kept (c0 / c1 true) or cut back (false). On an 'e' or 'n' span, swap = [[from, to], ...]
+//   (positions along the side) flips the depth there: a notch in 'e', a tab in 'n'.
 // corners = [bottom-left, bottom-right, top-right, top-left]: true keeps the t x t corner.
 // play narrows each kept finger: play/2 per face against another finger, play against a
 // corner or end zone, so every contact face gets a play-wide gap.
@@ -44,7 +45,11 @@ function fingerPanel(W,H,t,fw,edges,corners,play=0){
     spec.forEach((sp,k)=>{
       const a=pos,b=pos+sp.len;pos=b;
       let m0=k===0?t:a,m1=k===spec.length-1?L-t:b;
-      if(sp.type==='e'||sp.type==='n'){segs.push({a:m0,b:m1,d:sp.type==='e'?0:t});return;}
+      if(sp.type==='e'||sp.type==='n'){
+        const d=sp.type==='e'?0:t;let x=m0;
+        for(const [sa,sb] of (sp.swap||[]).slice().sort((p,q)=>p[0]-q[0])){segs.push({a:x,b:sa,d},{a:sa,b:sb,d:t-d});x=sb;}
+        segs.push({a:x,b:m1,d});return;
+      }
       if(k>0){segs.push({a,b:a+t,d:sp.c0?0:t});m0=a+t;}
       const tail=k<spec.length-1?{a:b-t,b,d:sp.c1?0:t}:null;
       if(tail)m1=b-t;
@@ -70,19 +75,29 @@ function fingerPanel(W,H,t,fw,edges,corners,play=0){
   return clean(pts);
 }
 // Replace the polygon vertex at `corner` with an arc around `centre` from point `from` (on the
-// incoming edge) to `to` (on the outgoing edge), the short way round. Used to round a panel
-// corner so a hinged lid can swing past it.
-function roundCorner(P,corner,centre,from,to,n=16){
+// incoming edge) to `to` (on the outgoing edge). dir: 0 = the short way round, 1 = counter-
+// clockwise, -1 = clockwise. Used to round a corner, cut a clearance arc, or add a knob.
+function roundCorner(P,corner,centre,from,to,dir=0,n=24){
   const i=P.findIndex(v=>Math.abs(v[0]-corner[0])<1e-6&&Math.abs(v[1]-corner[1])<1e-6);
   if(i<0)return P;
-  const r=Math.hypot(from[0]-centre[0],from[1]-centre[1]);
+  const r=Math.hypot(from[0]-centre[0],from[1]-centre[1]),TAU=2*Math.PI;
   const a0=Math.atan2(from[1]-centre[1],from[0]-centre[0]),a1=Math.atan2(to[1]-centre[1],to[0]-centre[0]);
-  let sw=a1-a0;
-  while(sw>Math.PI)sw-=2*Math.PI;
-  while(sw<-Math.PI)sw+=2*Math.PI;
+  let sw=((a1-a0)%TAU+TAU)%TAU;                                     // counter-clockwise sweep
+  if(dir===-1||(dir===0&&sw>Math.PI))sw-=TAU;
   const arc=[];
   for(let j=0;j<=n;j++){const a=a0+sw*j/n;arc.push([centre[0]+r*Math.cos(a),centre[1]+r*Math.sin(a)]);}
   return clean([...P.slice(0,i),...arc,...P.slice(i+1)]);
+}
+// Keep the part of polygon P where a*x + b*y + c >= 0 (P may be concave; the line should
+// cross it at most twice).
+function clipHalf(P,a,b,c){
+  const f=v=>a*v[0]+b*v[1]+c,out=[];
+  for(let i=0;i<P.length;i++){
+    const A=P[i],B=P[(i+1)%P.length],fa=f(A),fb=f(B);
+    if(fa>=0)out.push(A);
+    if((fa>=0)!==(fb>=0)){const s=fa/(fa-fb);out.push([A[0]+(B[0]-A[0])*s,A[1]+(B[1]-A[1])*s]);}
+  }
+  return clean(out);
 }
 // Grow a slot polygon by play/2 on every side (circles and free holes are left alone).
 const widen=(h,play)=>play>0&&!h.circle?LB.offset(h,play/2):h;
@@ -251,34 +266,110 @@ function boxChecks(p,parts){
   if(p.play>0)R.push({ok:true,name:'Joint clearance',detail:`Fingers and slots leave ${fmt(p.play)} mm per contact face. The interlock check uses the zero-clearance geometry, where every face must touch exactly.`});
   return R;
 }
+// Swing the moving parts (e.g. a lid) about an axis parallel to x through (y, z) = axis, opening
+// so the front rises. Samples points through each moving part's thickness and returns the
+// largest angle (degrees, in steps) reached before any point enters a fixed part; -1 if they
+// already collide when closed.
+function swing3d(moving,fixed,axis,{max=180,step=2,grid=3}={}){
+  const pts=[];
+  for(const A of moving.filter(q=>q.place)){
+    const q=A.place,bb=bbox(A.outline),tf=q.tf||(P=>P),uv=[];
+    for(let u=bb[0]+0.31*grid;u<bb[2];u+=grid)for(let v=bb[1]+0.27*grid;v<bb[3];v+=grid)uv.push([u,v]);
+    // Plus points along the outline, just inside it, so small features (tabs, corners) count.
+    const O=LB.area(A.outline)>0?A.outline:A.outline.slice().reverse();
+    O.forEach((a,i)=>{
+      const b=O[(i+1)%O.length],L=Math.hypot(b[0]-a[0],b[1]-a[1]),nu=-(b[1]-a[1])/L*0.02,nv=(b[0]-a[0])/L*0.02;
+      for(let s=0;s<L;s+=0.75)uv.push([a[0]+(b[0]-a[0])*s/L+nu,a[1]+(b[1]-a[1])*s/L+nv]);
+    });
+    // Depths: just inside both faces and the middle.
+    for(const w of [q.lo+0.02,(q.lo+q.hi)/2,q.hi-0.02])
+      for(const [u,v] of uv)if(inPart(A,u,v)){const P=[0,0,0];P[q.n]=w;P[q.u]=u;P[q.v]=v;pts.push(tf(P));}
+  }
+  // Fixed parts with a 3D bounding box, to skip the polygon test for far-away points.
+  const F=fixed.filter(q=>q.place).map(B=>{
+    const b=B.place,bb=bbox(B.outline),lo=[0,0,0],hi=[0,0,0];
+    lo[b.n]=b.lo;hi[b.n]=b.hi;lo[b.u]=bb[0];hi[b.u]=bb[2];lo[b.v]=bb[1];hi[b.v]=bb[3];
+    return {B,b,lo,hi};
+  });
+  const hit=P=>F.some(({B,b,lo,hi})=>P[0]>lo[0]&&P[0]<hi[0]&&P[1]>lo[1]&&P[1]<hi[1]&&P[2]>lo[2]&&P[2]<hi[2]&&inPart(B,P[b.u],P[b.v]));
+  let ok=-1;
+  for(let deg=0;deg<=max;deg+=step){
+    const a=deg*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+    if(pts.some(P=>{const dy=P[1]-axis[0],dz=P[2]-axis[1];return hit([P[0],axis[0]+dy*c+dz*s,axis[1]-dy*s+dz*c]);}))break;
+    ok=deg;
+  }
+  return ok;
+}
 function fingerCheck(p,lengths){
   const ns=lengths.map(L=>fingerSegs(L,p.t,p.fw*p.t).n),n=Math.min(...ns);
   return {ok:n>=3,name:'Every edge has at least 3 fingers',detail:`Fewest fingers on an edge: ${n}.`};
 }
 
 // ---------- assembled view ----------
-// Oblique projection from the front, right and above. Each part's visible face is drawn
-// as a flat polygon; bottoms first, tops last, walls back to front.
-function view3d(parts){
-  const S=parts.filter(q=>q.place);
-  const proj=P=>[P[0]+0.45*P[1],-P[2]-0.3*P[1]];
-  const faces=S.map(A=>{
-    const q=A.place,tf=q.tf||(P=>P),w=q.n===1?q.lo:q.hi;
-    const to3=([u,v])=>{const P=[0,0,0];P[q.n]=w;P[q.u]=u;P[q.v]=v;return tf(P);};
-    const rings=[A.outline,...(A.holes||[]).map(h=>h.circle?circlePoly(...h.circle):h)].map(r=>r.map(to3));
-    const c=rings[0].reduce((s,P)=>s.map((x,i)=>x+P[i]/rings[0].length),[0,0,0]);
-    return {rings,c,n:q.n,g:q.g||0};
-  });
-  const zs=faces.map(f=>f.c[2]),zMid=(Math.min(...zs)+Math.max(...zs))/2;
-  const key=f=>f.g*1e7+(f.n===2?(f.c[2]<zMid?-1e6:1e6)+f.c[2]:-(-0.45*f.c[0]+f.c[1]-0.3*f.c[2]));
-  faces.sort((a,b)=>key(a)-key(b));
+// Oblique projection from the front, right and above. drawFaces draws flat 3D polygons in the
+// order given: faces = [{rings: [[[x,y,z], ...], ...], cls}] (first ring outline, rest holes).
+const proj=P=>[P[0]+0.45*P[1],-P[2]-0.3*P[1]];
+const depth=P=>-0.45*P[0]+P[1]-0.3*P[2];                             // larger = farther away
+function drawFaces(faces){
   const all=faces.flatMap(f=>f.rings[0].map(proj));
   const bb=bbox(all),pad=Math.max(bb[2]-bb[0],bb[3]-bb[1])*0.04;
   const d=f=>f.rings.map(r=>'M'+r.map(P=>proj(P).map(f3).join(' ')).join(' L')+' Z').join(' ');
   return `<svg viewBox="${bb[0]-pad} ${bb[1]-pad} ${bb[2]-bb[0]+2*pad} ${bb[3]-bb[1]+2*pad}" style="max-height:420px" xmlns="http://www.w3.org/2000/svg">`+
-    faces.map(f=>`<path class="${f.n===2?'solidf':'solid'}" fill-rule="evenodd" d="${d(f)}"/>`).join('')+'</svg>';
+    faces.map(f=>`<path class="${f.cls||'solid'}" fill-rule="evenodd" d="${d(f)}"/>`).join('')+'</svg>';
+}
+// Each placed part's visible face, drawn as a flat polygon: bottoms first, tops last, walls
+// back to front, group by group. The facing axis is taken after tf, so rotated views work.
+function view3d(parts){
+  const faces=parts.filter(q=>q.place).map(A=>{
+    const q=A.place,tf=q.tf||(P=>P),w=q.n===1?q.lo:q.hi;
+    const to3=([u,v])=>{const P=[0,0,0];P[q.n]=w;P[q.u]=u;P[q.v]=v;return tf(P);};
+    const rings=[A.outline,...(A.holes||[]).map(h=>h.circle?circlePoly(...h.circle):h)].map(r=>r.map(to3));
+    const c=rings[0].reduce((s,P)=>s.map((x,i)=>x+P[i]/rings[0].length),[0,0,0]);
+    const span=[0,1,2].map(i=>{const v=rings[0].map(P=>P[i]);return Math.max(...v)-Math.min(...v);});
+    return {rings,c,n:span.indexOf(Math.min(...span)),g:q.g||0};
+  });
+  const zs=faces.map(f=>f.c[2]),zMid=(Math.min(...zs)+Math.max(...zs))/2;
+  const key=f=>f.g*1e7+(f.n===2?(f.c[2]<zMid?-1e6:1e6)+f.c[2]:-depth(f.c));
+  faces.sort((a,b)=>key(a)-key(b));
+  return drawFaces(faces.map(f=>({rings:f.rings,cls:f.n===2?'solidf':'solid'})));
 }
 
-LB.joints={fingerSegs,fingerPanel,bumpRect,roundedRect,roundCorner,circlePoly,hingeCuts,hingeParams,widen,
-  boxParams,playParam,withCheckParts,boxDims,boxParts,boxValidate,boxChecks,fingerCheck,coverage,view3d,pip};
+// ---------- grid of compartments (divider tray, shelf) ----------
+// Open box (outer X x Y x Z from p) split into p.nx x p.ny equal compartments by dividers that
+// cross with half-height slots and tab through slots in the walls and bottom.
+function gridBox(p,o={}){
+  const d=boxDims(p,false),{X,Y,Z}=d,t=p.t,nx=p.nx,ny=p.ny;
+  const hd=Z-t-(p.dh||0);                               // divider height above the bottom
+  const cwx=(X-2*t-(nx-1)*t)/nx,cwy=(Y-2*t-(ny-1)*t)/ny; // compartment sizes
+  const xc=[],yc=[];                                    // divider centres
+  for(let j=1;j<nx;j++)xc.push(t+j*cwx+(j-0.5)*t);
+  for(let j=1;j<ny;j++)yc.push(t+j*cwy+(j-0.5)*t);
+  const tz0=t+hd*0.3,tz1=t+hd*0.7;                      // end tabs into the walls
+  // Bottom tabs: one per stretch between crossings, middle 40%.
+  const tabs=(from,to,cross)=>{
+    const ends=[from,...cross.flatMap(c=>[c-t/2,c+t/2]),to],out=[];
+    for(let i=0;i<ends.length;i+=2){const a=ends[i],b=ends[i+1],m=(a+b)/2,w=(b-a)*0.4;out.push([m-w/2,m+w/2]);}
+    return out;
+  };
+  const xt=tabs(t,X-t,xc),yt=tabs(t,Y-t,yc);
+  const holes={front:[],back:[],left:[],right:[],bottom:[...(o.bottomHoles||[])]};
+  for(const x of xc){holes.front.push(rect(x-t/2,tz0,x+t/2,tz1));holes.back.push(rect(x-t/2,tz0,x+t/2,tz1));}
+  for(const y of yc){holes.left.push(rect(y-t/2,tz0,y+t/2,tz1));holes.right.push(rect(y-t/2,tz0,y+t/2,tz1));}
+  for(const y of yc)for(const [a,b] of xt)holes.bottom.push(rect(a,y-t/2,b,y+t/2));
+  for(const x of xc)for(const [a,b] of yt)holes.bottom.push(rect(x-t/2,a,x+t/2,b));
+  const parts=boxParts(X,Y,Z,t,p.fw*t,{top:false,play:p.play,holes,em:p.em,engrave:o.engrave||['front','back','left','right']});
+  // Dividers parallel to the front (slots from the top) and to the sides (slots from the bottom).
+  const hw=(t+p.play)/2;                                // half width of a crossing slot
+  yc.forEach((y,i)=>parts.push({name:'divx',label:`DIVIDER X${i+1}`,
+    outline:bumpRect(t,t,X-t,t+hd,{b:xt.map(([a,b])=>[a,b,t]),r:[[tz0,tz1,t]],l:[[tz0,tz1,t]],t:xc.map(x=>[x-hw,x+hw,-hd/2])}),
+    place:{n:1,lo:y-t/2,hi:y+t/2,u:0,v:2,env:[t,t,X-t,t+hd],g:0}}));
+  xc.forEach((x,i)=>parts.push({name:'divy',label:`DIVIDER Y${i+1}`,
+    outline:bumpRect(t,t,Y-t,t+hd,{b:[...yt.map(([a,b])=>[a,b,t]),...yc.map(y=>[y-hw,y+hw,-hd/2])],r:[[tz0,tz1,t]],l:[[tz0,tz1,t]]}),
+    place:{n:0,lo:x-t/2,hi:x+t/2,u:1,v:2,env:[t,t,Y-t,t+hd],g:0}}));
+  return {...d,hd,cwx,cwy,xc,yc,parts};
+}
+
+LB.joints={fingerSegs,fingerPanel,bumpRect,roundedRect,roundCorner,clipHalf,circlePoly,hingeCuts,hingeParams,widen,
+  boxParams,playParam,withCheckParts,boxDims,boxParts,boxValidate,boxChecks,fingerCheck,gridBox,
+  coverage,swing3d,inPart,view3d,drawFaces,depth,pip};
 })();
